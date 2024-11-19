@@ -1,0 +1,78 @@
+# Import Data Analysis libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# This project uses the following dataset:
+file_path = '/Users/actblue/Downloads/POA_home_task_dataset.csv'
+data = pd.read_csv(file_path)
+
+# Print to confirm dataset loaded correctly
+print(data.head())
+
+# Calculate the 10th percentile threshold
+threshold = data['classification_score'].quantile(0.10)
+
+# Filter the data to include only the top 90% of values    
+top_90_percent = data[data['classification_score'] > threshold]
+
+# Display the filtered data
+print(top_90_percent.head())
+
+# Calculate the 10th percentile (threshold for top 90%)
+order_status_counts = data['order_status'].value_counts()
+order_status_counts_top90 = top_90_percent['order_status'].value_counts()
+counts = data['order_status'].count()
+counts_top90 = top_90_percent['order_status'].count()
+
+# Display the threshold
+#Confirm the data has been filtered showing fewer rows, fewer approved rows, and fewer chargebacks
+print(f"Minimum classification score in the top 90% is {threshold}")
+print(f"Total row count: {counts}")
+print(f"Top 90% Classification Score row count: {counts_top90}")
+print(order_status_counts)
+print(order_status_counts_top90)
+
+# Plot the distribution of the classification scores in the filtered data
+plt.figure(figsize=(10, 6))
+sns.histplot(top_90_percent['classification_score'], bins=20, kde=True, color='blue')
+plt.title('Distribution of Classification Scores (Top 90%)', fontsize=16)
+plt.xlabel('Classification Score', fontsize=12)
+plt.ylabel('Frequency', fontsize=12)
+plt.show()
+
+# Total the chargeback and revenue columns respectively
+total_chargebacks = data[data['order_status'] == 'chargeback']['price'].sum()
+total_revenue = data['price'].sum()
+
+# Calculate the required fee to achieve a 50% proportion of chargebacks to revenue
+# Setting up the equation: total_chargebacks = 0.5 * total_revenue
+# Required fee = (total_chargebacks / 0.5) / total_revenue
+required_fee_percentage = (total_chargebacks / (0.5 * total_revenue)) * 100
+
+# Display the results
+print(f"Total Chargebacks: {total_chargebacks}")
+print(f"Total Revenue: {total_revenue}")
+print(f"Required Fee Percentage: {required_fee_percentage}%")
+
+# Step 1: Total the chargebacks for both digital and non-digital products
+total_chargebacks_digital = data[(data['order_status'] == 'chargeback') & (data['digital_product'] == True)]['price'].sum()
+total_chargebacks_non_digital = data[(data['order_status'] == 'chargeback') & (data['digital_product'] == False)]['price'].sum()
+
+# Step 2: Calculate total revenue
+total_revenue = data['price'].sum()
+
+# Step 3: Calculate the required fee percentage to achieve the 50% proportion
+# Required fee percentage for digital products
+required_fee_percentage_digital = (total_chargebacks_digital / (0.5 * total_revenue)) * 100 if total_revenue != 0 else 0
+
+# Required fee percentage for non-digital products
+required_fee_percentage_non_digital = (total_chargebacks_non_digital / (0.5 * total_revenue)) * 100 if total_revenue != 0 else 0
+
+# Display the results
+print(f"Total Chargebacks (Digital Products): {total_chargebacks_digital}")
+print(f"Total Chargebacks (Non-Digital Products): {total_chargebacks_non_digital}")
+print(f"Total Revenue: {total_revenue}")
+print(f"Required Fee Percentage (Digital Products): {required_fee_percentage_digital:.2f}%")
+print(f"Required Fee Percentage (Non-Digital Products): {required_fee_percentage_non_digital:.2f}%")
