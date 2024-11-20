@@ -1,0 +1,25 @@
+import pandas as pd
+import json
+
+file_path = "/Users/Downloads/ActiveWorkers.Json"
+with open(file_path, "r") as file:
+    data = json.load(file)
+
+active_workers_df = pd.json_normalize(data, record_path=['workers'], sep='_')
+def extract_payroll_ID(row):
+    work_assignments = row.get('workAssignments', [])
+    for assignment in work_assignments:
+        custom_fields = assignment.get('customFieldGroup', {}).get('stringFields', [])
+        for field in custom_fields:
+            if field.get('nameCode', {}).get('codeValue') == 'payrollCustomArea4':
+                return field.get('stringValue')
+    return None
+
+active_workers_df['payroll_ID'] = active_workers_df.apply(extract_payroll_ID, axis=1)
+old_employees_df = pd.read_csv("/Users/Downloads/OldEmployees.csv")
+old_employees_df.columns = ['EmployeeID', 'Username', 'Name']
+merged_df = pd.merge(active_workers_df, old_employees_df, how='outer', left_on='payroll_ID', right_on='EmployeeID')
+merged_df = merged_df[['associateOID', 'Username', 'Name']]
+csv_file_path = "/Users/actblue/Downloads/merged_data.csv"
+merged_df.to_csv(csv_file_path, index=False)
+merged_df
